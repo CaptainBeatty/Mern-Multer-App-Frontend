@@ -13,11 +13,13 @@ const Login = ({ onLoginSuccess }) => {
     try {
       const res = await axios.post('http://localhost:5000/api/auth/login', formData);
 
-      // Stocker le token et passer l'username
+      // Stocker le token JWT dans localStorage
       localStorage.setItem('token', res.data.token);
-      onLoginSuccess(res.data.username); // Passe l'username au parent
+
+      // Passe le nom d'utilisateur au parent
+      onLoginSuccess(res.data.username);
     } catch (err) {
-      console.error('Erreur lors de la connexion:', err.response.data.error);
+      console.error('Erreur lors de la connexion:', err.response?.data?.error || err.message);
     }
   };
 

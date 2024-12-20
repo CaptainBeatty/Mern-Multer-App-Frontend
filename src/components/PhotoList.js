@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const PhotoList = ({ photos, onPhotoDeleted, onPhotoUpdated }) => {
+const PhotoList = ({ photos, onPhotoDeleted, onPhotoUpdated, currentUserId }) => {
   const [editPhotoId, setEditPhotoId] = useState(null); // ID de la photo en cours de modification
   const [newTitle, setNewTitle] = useState('');
   const [newImage, setNewImage] = useState(null);
@@ -86,12 +86,37 @@ const PhotoList = ({ photos, onPhotoDeleted, onPhotoUpdated }) => {
               <h3>{photo.title}</h3>
               <img src={photo.imageUrl} alt={photo.title} width="300" />
               <br />
-              <button onClick={() => handleEdit(photo)} style={{ marginRight: '10px', marginTop: '10px' }}>
-                Modifier
-              </button>
-              <button onClick={() => handleDelete(photo._id)} style={{ color: 'white', backgroundColor: 'red', border: 'none', padding: '5px 10px' }}>
-                Supprimer
-              </button>
+              <div style={{ marginTop: '10px' }}>
+                {/* Bouton Modifier */}
+                <button
+                  onClick={() => handleEdit(photo)}
+                  disabled={photo.userId !== currentUserId} // Désactiver si l'utilisateur n'est pas le propriétaire
+                  style={{
+                    marginRight: '10px',
+                    backgroundColor: photo.userId === currentUserId ? '#007bff' : '#cccccc',
+                    color: photo.userId === currentUserId ? 'white' : '#666666',
+                    border: 'none',
+                    padding: '5px 10px',
+                    cursor: photo.userId === currentUserId ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  Modifier
+                </button>
+                {/* Bouton Supprimer */}
+                <button
+                  onClick={() => handleDelete(photo._id)}
+                  disabled={photo.userId !== currentUserId} // Désactiver si l'utilisateur n'est pas le propriétaire
+                  style={{
+                    backgroundColor: photo.userId === currentUserId ? 'red' : '#cccccc',
+                    color: photo.userId === currentUserId ? 'white' : '#666666',
+                    border: 'none',
+                    padding: '5px 10px',
+                    cursor: photo.userId === currentUserId ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  Supprimer
+                </button>
+              </div>
             </div>
           )}
         </div>

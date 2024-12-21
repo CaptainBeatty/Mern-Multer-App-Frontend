@@ -4,18 +4,20 @@ import PhotoForm from './components/PhotoForm';
 import PhotoList from './components/PhotoList';
 import Register from './components/Register';
 import Login from './components/Login';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 const App = () => {
-  const [photos, setPhotos] = useState([]);
-  const [username, setUsername] = useState('');
-  const [currentUserId, setCurrentUserId] = useState(null);
+  const [photos, setPhotos] = useState([]); // Toutes les photos publiées
+  const [username, setUsername] = useState(''); // Nom d'utilisateur connecté
+  const [currentUserId, setCurrentUserId] = useState(null); // ID de l'utilisateur connecté
+  const [showLogin, setShowLogin] = useState(false); // Afficher ou cacher le formulaire de connexion
+  const [showRegister, setShowRegister] = useState(false); // Afficher ou cacher le formulaire d'inscription
 
   // Fonction pour récupérer les photos depuis le backend
   const fetchPhotos = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/photos');
-      setPhotos(res.data); // Mettre à jour les photos dans l'état
+      const res = await axios.get('http://localhost:5000/api/photos'); // Récupérer toutes les photos
+      setPhotos(res.data); // Stocker les photos dans l'état
     } catch (err) {
       console.error('Erreur lors de la récupération des photos:', err);
     }
@@ -24,15 +26,13 @@ const App = () => {
   // Fonction appelée après connexion réussie
   const handleLoginSuccess = (username) => {
     const token = localStorage.getItem('token');
-    console.log('Token après connexion :', token);
     if (token) {
-      const decodedToken = jwtDecode(token);
-      console.log('Token décodé :', decodedToken);
+      const decodedToken = jwtDecode(token); // Décoder le token JWT
       setUsername(username);
       setCurrentUserId(decodedToken.id);
-      localStorage.setItem('username', username); // Stocker le nom d'utilisateur
-      fetchPhotos(); // Charger les photos après connexion
+      setShowLogin(false); // Fermer le formulaire de connexion après succès
     }
+    fetchPhotos(); // Charger les photos après connexion
   };
 
   // Fonction pour gérer la déconnexion
@@ -41,57 +41,60 @@ const App = () => {
     localStorage.removeItem('username'); // Supprimer le nom d'utilisateur
     setUsername('');
     setCurrentUserId(null);
-    setPhotos([]); // Réinitialiser les photos
+    fetchPhotos(); // Recharger les photos après déconnexion
   };
 
-  // Charger les informations utilisateur depuis le localStorage au démarrage de l'application
+  // Charger les photos et les informations utilisateur au démarrage de l'application
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUsername = localStorage.getItem('username');
-    console.log('Token au démarrage :', token);
-    console.log('Nom utilisateur stocké :', storedUsername);
     if (token) {
-      const decodedToken = jwtDecode(token);
+      const decodedToken = jwtDecode(token); // Décoder le token JWT
       setUsername(storedUsername || decodedToken.username);
       setCurrentUserId(decodedToken.id);
-      fetchPhotos(); // Charger les photos
     }
+    fetchPhotos(); // Charger les photos publiées
   }, []);
 
   const handlePhotoAdded = (newPhoto) => {
-    setPhotos([newPhoto, ...photos]);
+    setPhotos([newPhoto, ...photos]); // Ajouter la nouvelle photo à la liste
   };
 
   const handlePhotoDeleted = (id) => {
-    setPhotos(photos.filter((photo) => photo._id !== id));
+    setPhotos(photos.filter((photo) => photo._id !== id)); // Retirer la photo supprimée de la liste
   };
 
   const handlePhotoUpdated = (updatedPhoto) => {
-    setPhotos(photos.map((photo) => (photo._id === updatedPhoto._id ? updatedPhoto : photo)));
+    setPhotos(photos.map((photo) => (photo._id === updatedPhoto._id ? updatedPhoto : photo))); // Mettre à jour la photo modifiée
   };
 
   return (
     <div>
-      <h1>Authentification</h1>
+      <h1>Galerie de Photos</h1>
       {username ? (
         <div>
           <h2>Bonjour, {username} !</h2>
           <button onClick={handleLogout}>Se déconnecter</button>
-          <h1>Photo Upload App</h1>
           <PhotoForm onPhotoAdded={handlePhotoAdded} />
-          <PhotoList
-            photos={photos}
-            onPhotoDeleted={handlePhotoDeleted}
-            onPhotoUpdated={handlePhotoUpdated}
-            currentUserId={currentUserId}
-          />
         </div>
       ) : (
-        <>
-          <Register />
-          <Login onLoginSuccess={handleLoginSuccess} />
-        </>
+        <div>
+          <h2>Bienvenue sur la galerie !</h2>
+          <p>Connectez-vous ou créez un compte pour publier, modifier ou supprimer des photos.</p>
+          <div>
+            <button onClick={() => setShowLogin(true)}>Se connecter</button>
+            <button onClick={() => setShowRegister(true)}>S'inscrire</button>
+          </div>
+          {showLogin && <Login onLoginSuccess={handleLoginSuccess} />}
+          {showRegister && <Register />}
+        </div>
       )}
+      <PhotoList
+        photos={photos}
+        onPhotoDeleted={handlePhotoDeleted}
+        onPhotoUpdated={handlePhotoUpdated}
+        currentUserId={currentUserId} // ID utilisateur pour activer/désactiver les boutons
+      />
     </div>
   );
 };

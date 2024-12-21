@@ -90,7 +90,7 @@ const PhotoList = ({ photos, onPhotoDeleted, onPhotoUpdated, currentUserId }) =>
                 {/* Bouton Modifier */}
                 <button
                   onClick={() => handleEdit(photo)}
-                  disabled={photo.userId !== currentUserId} // Désactiver si l'utilisateur n'est pas le propriétaire
+                  disabled={!currentUserId || photo.userId !== currentUserId} // Désactiver si non connecté ou pas propriétaire
                   style={{
                     marginRight: '10px',
                     backgroundColor: photo.userId === currentUserId ? '#007bff' : '#cccccc',
@@ -105,7 +105,7 @@ const PhotoList = ({ photos, onPhotoDeleted, onPhotoUpdated, currentUserId }) =>
                 {/* Bouton Supprimer */}
                 <button
                   onClick={() => handleDelete(photo._id)}
-                  disabled={photo.userId !== currentUserId} // Désactiver si l'utilisateur n'est pas le propriétaire
+                  disabled={!currentUserId || photo.userId !== currentUserId} // Désactiver si non connecté ou pas propriétaire
                   style={{
                     backgroundColor: photo.userId === currentUserId ? 'red' : '#cccccc',
                     color: photo.userId === currentUserId ? 'white' : '#666666',

@@ -30,6 +30,7 @@ const App = () => {
       const decodedToken = jwtDecode(token); // Décoder le token JWT
       setUsername(username);
       setCurrentUserId(decodedToken.id);
+      localStorage.setItem('username', username); // Stocker le username dans le localStorage
       setShowLogin(false); // Fermer le formulaire de connexion après succès
     }
     fetchPhotos(); // Charger les photos après connexion
@@ -50,8 +51,8 @@ const App = () => {
     const storedUsername = localStorage.getItem('username');
     if (token) {
       const decodedToken = jwtDecode(token); // Décoder le token JWT
-      setUsername(storedUsername || decodedToken.username);
-      setCurrentUserId(decodedToken.id);
+      setUsername(storedUsername || decodedToken.username); // Charger le username depuis le localStorage ou le token
+      setCurrentUserId(decodedToken.id); // Charger l'ID utilisateur
     }
     fetchPhotos(); // Charger les photos publiées
   }, []);

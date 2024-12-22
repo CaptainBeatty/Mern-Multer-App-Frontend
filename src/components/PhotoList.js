@@ -4,6 +4,7 @@ import axios from 'axios';
 const PhotoList = ({ photos, onPhotoDeleted, onPhotoUpdated, currentUserId }) => {
   const [editPhotoId, setEditPhotoId] = useState(null); // ID de la photo en cours de modification
   const [newTitle, setNewTitle] = useState('');
+  const [newCameraType, setNewCameraType] = useState(''); // Champ pour le type d'appareil photo
   const [newImage, setNewImage] = useState(null);
 
   // Supprimer une photo
@@ -29,6 +30,7 @@ const PhotoList = ({ photos, onPhotoDeleted, onPhotoUpdated, currentUserId }) =>
   const handleEdit = (photo) => {
     setEditPhotoId(photo._id); // ID de la photo en cours de modification
     setNewTitle(photo.title); // Pré-remplir le titre actuel
+    setNewCameraType(photo.cameraType || ''); // Pré-remplir le type d'appareil photo actuel
     setNewImage(null); // Réinitialiser l'image
   };
 
@@ -43,6 +45,7 @@ const PhotoList = ({ photos, onPhotoDeleted, onPhotoUpdated, currentUserId }) =>
 
       const formData = new FormData();
       formData.append('title', newTitle);
+      formData.append('cameraType', newCameraType); // Ajouter le nouveau type d'appareil photo
       if (newImage) {
         formData.append('image', newImage); // Ajouter la nouvelle image si présente
       }
@@ -72,6 +75,12 @@ const PhotoList = ({ photos, onPhotoDeleted, onPhotoUpdated, currentUserId }) =>
                 placeholder="Nouveau titre"
               />
               <input
+                type="text"
+                value={newCameraType}
+                onChange={(e) => setNewCameraType(e.target.value)}
+                placeholder="Type d'appareil photo"
+              />
+              <input
                 type="file"
                 onChange={(e) => setNewImage(e.target.files[0])}
               />
@@ -84,13 +93,14 @@ const PhotoList = ({ photos, onPhotoDeleted, onPhotoUpdated, currentUserId }) =>
             // Affichage des photos
             <div>
               <h3>{photo.title}</h3>
+              <p>Appareil photo : {photo.cameraType || 'Non spécifié'}</p>
               <img src={photo.imageUrl} alt={photo.title} width="300" />
               <br />
               <div style={{ marginTop: '10px' }}>
                 {/* Bouton Modifier */}
                 <button
                   onClick={() => handleEdit(photo)}
-                  disabled={!currentUserId || photo.userId !== currentUserId} // Désactiver si non connecté ou pas propriétaire
+                  disabled={photo.userId !== currentUserId} // Désactiver si l'utilisateur n'est pas le propriétaire
                   style={{
                     marginRight: '10px',
                     backgroundColor: photo.userId === currentUserId ? '#007bff' : '#cccccc',
@@ -105,7 +115,7 @@ const PhotoList = ({ photos, onPhotoDeleted, onPhotoUpdated, currentUserId }) =>
                 {/* Bouton Supprimer */}
                 <button
                   onClick={() => handleDelete(photo._id)}
-                  disabled={!currentUserId || photo.userId !== currentUserId} // Désactiver si non connecté ou pas propriétaire
+                  disabled={photo.userId !== currentUserId} // Désactiver si l'utilisateur n'est pas le propriétaire
                   style={{
                     backgroundColor: photo.userId === currentUserId ? 'red' : '#cccccc',
                     color: photo.userId === currentUserId ? 'white' : '#666666',

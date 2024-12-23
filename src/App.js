@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import axios from 'axios';
 import PhotoForm from './components/PhotoForm';
 import PhotoList from './components/PhotoList';
+import PhotoDetails from './components/PhotoDetails'; // Importer le composant de détails
 import Register from './components/Register';
 import Login from './components/Login';
 import { jwtDecode } from 'jwt-decode';
@@ -70,33 +72,48 @@ const App = () => {
   };
 
   return (
-    <div>
-      <h1>Galerie de Photos</h1>
-      {username ? (
-        <div>
-          <h2>Bonjour, {username} !</h2>
-          <button onClick={handleLogout}>Se déconnecter</button>
-          <PhotoForm onPhotoAdded={handlePhotoAdded} />
-        </div>
-      ) : (
-        <div>
-          <h2>Bienvenue sur la galerie !</h2>
-          <p>Connectez-vous ou créez un compte pour publier, modifier ou supprimer des photos.</p>
-          <div>
-            <button onClick={() => setShowLogin(true)}>Se connecter</button>
-            <button onClick={() => setShowRegister(true)}>S'inscrire</button>
-          </div>
-          {showLogin && <Login onLoginSuccess={handleLoginSuccess} />}
-          {showRegister && <Register />}
-        </div>
-      )}
-      <PhotoList
-        photos={photos}
-        onPhotoDeleted={handlePhotoDeleted}
-        onPhotoUpdated={handlePhotoUpdated}
-        currentUserId={currentUserId} // ID utilisateur pour activer/désactiver les boutons
-      />
-    </div>
+    <Router>
+      <Routes>
+        {/* Route pour la page d'accueil */}
+        <Route
+          path="/"
+          element={
+            <div>
+              <h1>Galerie de Photos</h1>
+              {username ? (
+                <div>
+                  <h2>Bonjour, {username} !</h2>
+                  <button onClick={handleLogout}>Se déconnecter</button>
+                  <PhotoForm onPhotoAdded={handlePhotoAdded} />
+                </div>
+              ) : (
+                <div>
+                  <h2>Bienvenue sur la galerie !</h2>
+                  <p>Connectez-vous ou créez un compte pour publier, modifier ou supprimer des photos.</p>
+                  <div>
+                    <button onClick={() => setShowLogin(true)}>Se connecter</button>
+                    <button onClick={() => setShowRegister(true)}>S'inscrire</button>
+                  </div>
+                  {showLogin && <Login onLoginSuccess={handleLoginSuccess} />}
+                  {showRegister && <Register />}
+                </div>
+              )}
+              <PhotoList
+                photos={photos}
+                onPhotoDeleted={handlePhotoDeleted}
+                onPhotoUpdated={handlePhotoUpdated}
+                currentUserId={currentUserId} // ID utilisateur pour activer/désactiver les boutons
+              />
+            </div>
+          }
+        />
+        {/* Route pour les détails de la photo */}
+        <Route
+          path="/photo/:id"
+          element={<PhotoDetails currentUserId={currentUserId} />}
+        />
+      </Routes>
+    </Router>
   );
 };
 

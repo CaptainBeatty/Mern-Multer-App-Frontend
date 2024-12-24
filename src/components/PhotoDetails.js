@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import dayjs from 'dayjs'; // Importer Day.js
 
-const PhotoDetails = ({ currentUserId }) => {
+const PhotoDetails = ({ currentUserId, onPhotoDeleted }) => {
   const { id } = useParams(); // Récupérer l'ID de la photo depuis l'URL
   const navigate = useNavigate();
   const [photo, setPhoto] = useState(null); // Détails de la photo
@@ -10,16 +11,23 @@ const PhotoDetails = ({ currentUserId }) => {
   const [newTitle, setNewTitle] = useState(''); // Nouveau titre
   const [newCameraType, setNewCameraType] = useState(''); // Nouveau type d'appareil photo
   const [newImage, setNewImage] = useState(null); // Nouvelle image
+  const [newDate, setNewDate] = useState(''); // Nouvelle date de prise de vue
 
   useEffect(() => {
     const fetchPhoto = async () => {
       try {
         const res = await axios.get(`http://localhost:5000/api/photos/${id}`);
         setPhoto(res.data);
-        setNewTitle(res.data.title); // Pré-remplir le titre
-        setNewCameraType(res.data.cameraType || ''); // Pré-remplir le type d'appareil photo
+
+        // Pré-remplir les champs pour l'édition
+        setNewTitle(res.data.title);
+        setNewCameraType(res.data.cameraType || '');
+        setNewDate(
+          res.data.date ? dayjs(res.data.date, 'DD/MM/YYYY').format('YYYY-MM-DD') : ''
+        ); // Convertir en format compatible avec input[type="date"]
       } catch (err) {
         console.error('Erreur lors de la récupération de la photo:', err);
+        alert('Erreur lors du chargement de la photo. Veuillez réessayer.');
       }
     };
 
@@ -34,11 +42,17 @@ const PhotoDetails = ({ currentUserId }) => {
         return;
       }
 
+      if (!dayjs(newDate, 'YYYY-MM-DD', true).isValid()) {
+        alert('Veuillez entrer une date valide (AAAA-MM-JJ).');
+        return;
+      }
+
       const formData = new FormData();
-      formData.append('title', newTitle || photo.title); // Utiliser le nouveau titre ou conserver l'ancien
-      formData.append('cameraType', newCameraType || photo.cameraType); // Utiliser le nouveau type ou conserver l'ancien
+      formData.append('title', newTitle || photo.title);
+      formData.append('cameraType', newCameraType || photo.cameraType);
+      formData.append('date', dayjs(newDate, 'YYYY-MM-DD').format('DD/MM/YYYY')); // Convertir en format attendu par le backend
       if (newImage) {
-        formData.append('image', newImage); // Ajouter la nouvelle image si présente
+        formData.append('image', newImage);
       }
 
       const res = await axios.put(`http://localhost:5000/api/photos/${id}`, formData, {
@@ -47,8 +61,10 @@ const PhotoDetails = ({ currentUserId }) => {
 
       setPhoto(res.data); // Mettre à jour la photo avec les nouvelles données
       setIsEditing(false); // Quitter le mode édition
+      alert('Photo mise à jour avec succès.');
     } catch (err) {
       console.error('Erreur lors de la modification de la photo:', err);
+      alert('Erreur lors de la modification de la photo. Veuillez réessayer.');
     }
   };
 
@@ -63,9 +79,16 @@ const PhotoDetails = ({ currentUserId }) => {
       await axios.delete(`http://localhost:5000/api/photos/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      alert('Photo supprimée avec succès.');
+
+       // Notifier le parent pour mettre à jour la liste des photos
+       if (onPhotoDeleted) {
+        onPhotoDeleted(id);
+      }
       navigate('/'); // Rediriger vers la page d'accueil après suppression
     } catch (err) {
       console.error('Erreur lors de la suppression de la photo:', err);
+      alert('Erreur lors de la suppression de la photo. Veuillez réessayer.');
     }
   };
 
@@ -93,6 +116,13 @@ const PhotoDetails = ({ currentUserId }) => {
               style={{ display: 'block', marginBottom: '10px' }}
             />
             <input
+              type="date"
+              value={newDate}
+              onChange={(e) => setNewDate(e.target.value)}
+              placeholder="Date de prise de vue"
+              style={{ display: 'block', marginBottom: '10px' }}
+            />
+            <input
               type="file"
               onChange={(e) => setNewImage(e.target.files[0])}
               style={{ display: 'block', marginBottom: '10px' }}
@@ -106,6 +136,7 @@ const PhotoDetails = ({ currentUserId }) => {
           <div>
             <h3>{photo.title}</h3>
             <p>Appareil photo : {photo.cameraType || 'Non spécifié'}</p>
+            <p>Date : {photo.date || 'Non spécifiée'}</p>
             {currentUserId === photo.userId && (
               <>
                 <button

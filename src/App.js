@@ -110,7 +110,8 @@ const App = () => {
         {/* Route pour les détails de la photo */}
         <Route
           path="/photo/:id"
-          element={<PhotoDetails currentUserId={currentUserId} />}
+          element={<PhotoDetails currentUserId={currentUserId} onPhotoDeleted={handlePhotoDeleted} // Passer la fonction au composant PhotoDetails
+          /> }
         />
       </Routes>
     </Router>

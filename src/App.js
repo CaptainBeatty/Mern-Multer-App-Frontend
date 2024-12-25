@@ -3,117 +3,132 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import axios from 'axios';
 import PhotoForm from './components/PhotoForm';
 import PhotoList from './components/PhotoList';
-import PhotoDetails from './components/PhotoDetails'; // Importer le composant de détails
+import PhotoDetails from './components/PhotoDetails';
 import Register from './components/Register';
 import Login from './components/Login';
+import Header from './components/Header'; // Importer le composant Header
 import { jwtDecode } from 'jwt-decode';
 
 const App = () => {
-  const [photos, setPhotos] = useState([]); // Toutes les photos publiées
-  const [username, setUsername] = useState(''); // Nom d'utilisateur connecté
-  const [currentUserId, setCurrentUserId] = useState(null); // ID de l'utilisateur connecté
-  const [showLogin, setShowLogin] = useState(false); // Afficher ou cacher le formulaire de connexion
-  const [showRegister, setShowRegister] = useState(false); // Afficher ou cacher le formulaire d'inscription
+  const [photos, setPhotos] = useState([]); // Stocker les photos
+  const [username, setUsername] = useState(''); // Nom de l'utilisateur connecté
+  const [currentUserId, setCurrentUserId] = useState(null); // ID utilisateur
+  const [showLogin, setShowLogin] = useState(false); // Afficher ou masquer Login
+  const [showRegister, setShowRegister] = useState(false); // Afficher ou masquer Register
+  const [showPhotoForm, setShowPhotoForm] = useState(false); // Afficher ou masquer le formulaire d'ajout de photo
 
-  // Fonction pour récupérer les photos depuis le backend
+  // Récupérer les photos depuis le backend
   const fetchPhotos = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/photos'); // Récupérer toutes les photos
-      setPhotos(res.data); // Stocker les photos dans l'état
+      const res = await axios.get('http://localhost:5000/api/photos');
+      setPhotos(res.data);
     } catch (err) {
       console.error('Erreur lors de la récupération des photos:', err);
     }
   };
 
-  // Fonction appelée après connexion réussie
+  // Fonction appelée après une connexion réussie
   const handleLoginSuccess = (username) => {
     const token = localStorage.getItem('token');
     if (token) {
-      const decodedToken = jwtDecode(token); // Décoder le token JWT
+      const decodedToken = jwtDecode(token);
       setUsername(username);
       setCurrentUserId(decodedToken.id);
-      localStorage.setItem('username', username); // Stocker le username dans le localStorage
-      setShowLogin(false); // Fermer le formulaire de connexion après succès
+      localStorage.setItem('username', username);
+      setShowLogin(false);
     }
-    fetchPhotos(); // Charger les photos après connexion
+    fetchPhotos();
   };
 
-  // Fonction pour gérer la déconnexion
+  // Déconnexion
   const handleLogout = () => {
-    localStorage.removeItem('token'); // Supprimer le token du localStorage
-    localStorage.removeItem('username'); // Supprimer le nom d'utilisateur
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
     setUsername('');
     setCurrentUserId(null);
-    fetchPhotos(); // Recharger les photos après déconnexion
+    setShowPhotoForm(false); // Cacher le formulaire d'ajout au logout
+    fetchPhotos();
   };
 
-  // Charger les photos et les informations utilisateur au démarrage de l'application
+  // Charger les informations utilisateur et les photos au démarrage
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUsername = localStorage.getItem('username');
     if (token) {
-      const decodedToken = jwtDecode(token); // Décoder le token JWT
-      setUsername(storedUsername || decodedToken.username); // Charger le username depuis le localStorage ou le token
-      setCurrentUserId(decodedToken.id); // Charger l'ID utilisateur
+      const decodedToken = jwtDecode(token);
+      setUsername(storedUsername || decodedToken.username);
+      setCurrentUserId(decodedToken.id);
     }
-    fetchPhotos(); // Charger les photos publiées
+    fetchPhotos();
   }, []);
 
   const handlePhotoAdded = (newPhoto) => {
-    setPhotos([newPhoto, ...photos]); // Ajouter la nouvelle photo à la liste
+    setPhotos([newPhoto, ...photos]);
+    setShowPhotoForm(false); // Cacher le formulaire après ajout
   };
 
   const handlePhotoDeleted = (id) => {
-    setPhotos(photos.filter((photo) => photo._id !== id)); // Retirer la photo supprimée de la liste
+    setPhotos(photos.filter((photo) => photo._id !== id));
   };
 
   const handlePhotoUpdated = (updatedPhoto) => {
-    setPhotos(photos.map((photo) => (photo._id === updatedPhoto._id ? updatedPhoto : photo))); // Mettre à jour la photo modifiée
+    setPhotos(photos.map((photo) => (photo._id === updatedPhoto._id ? updatedPhoto : photo)));
   };
 
   return (
     <Router>
-      <Routes>
-        {/* Route pour la page d'accueil */}
-        <Route
-          path="/"
-          element={
-            <div>
-              <h1>Galerie de Photos</h1>
-              {username ? (
-                <div>
-                  <h2>Bonjour, {username} !</h2>
-                  <button onClick={handleLogout}>Se déconnecter</button>
-                  <PhotoForm onPhotoAdded={handlePhotoAdded} />
-                </div>
-              ) : (
-                <div>
-                  <h2>Bienvenue sur la galerie !</h2>
-                  <p>Connectez-vous ou créez un compte pour publier, modifier ou supprimer des photos.</p>
-                  <div>
-                    <button onClick={() => setShowLogin(true)}>Se connecter</button>
-                    <button onClick={() => setShowRegister(true)}>S'inscrire</button>
+      {/* Intégration du Header */}
+      <Header
+        username={username}
+        onLogout={handleLogout}
+        onShowLogin={() => {
+          setShowLogin(true);
+          setShowRegister(false);
+        }}
+        onShowRegister={() => {
+          setShowRegister(true);
+          setShowLogin(false);
+        }}
+        onTogglePhotoForm={() => setShowPhotoForm(!showPhotoForm)} // Gérer l'affichage du formulaire d'ajout
+      />
+      <div style={{ padding: '20px' }}>
+        <Routes>
+          {/* Route pour la page principale */}
+          <Route
+            path="/"
+            element={
+              <div>
+                {/* Login et Register affichés conditionnellement */}
+                {showLogin && <Login onLoginSuccess={handleLoginSuccess} />}
+                {showRegister && <Register />}
+                {/* Formulaire d'ajout de photo */}
+                {showPhotoForm && username && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <PhotoForm onPhotoAdded={handlePhotoAdded} />
                   </div>
-                  {showLogin && <Login onLoginSuccess={handleLoginSuccess} />}
-                  {showRegister && <Register />}
-                </div>
-              )}
-              <PhotoList
-                photos={photos}
+                )}
+                {/* Liste des photos */}
+                <PhotoList
+                  photos={photos}
+                  onPhotoDeleted={handlePhotoDeleted}
+                  onPhotoUpdated={handlePhotoUpdated}
+                  currentUserId={currentUserId}
+                />
+              </div>
+            }
+          />
+          {/* Route pour les détails d'une photo */}
+          <Route
+            path="/photo/:id"
+            element={
+              <PhotoDetails
+                currentUserId={currentUserId}
                 onPhotoDeleted={handlePhotoDeleted}
-                onPhotoUpdated={handlePhotoUpdated}
-                currentUserId={currentUserId} // ID utilisateur pour activer/désactiver les boutons
               />
-            </div>
-          }
-        />
-        {/* Route pour les détails de la photo */}
-        <Route
-          path="/photo/:id"
-          element={<PhotoDetails currentUserId={currentUserId} onPhotoDeleted={handlePhotoDeleted} // Passer la fonction au composant PhotoDetails
-          /> }
-        />
-      </Routes>
+            }
+          />
+        </Routes>
+      </div>
     </Router>
   );
 };

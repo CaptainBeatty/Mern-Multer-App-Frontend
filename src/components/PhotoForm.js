@@ -1,108 +1,178 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import dayjs from 'dayjs'; // Importer Day.js
+import dayjs from 'dayjs';
 
-const PhotoForm = ({ onPhotoAdded }) => {
-  const [title, setTitle] = useState(''); // Titre de la photo
-  const [image, setImage] = useState(null); // Fichier image
-  const [cameraType, setCameraType] = useState(''); // Type d'appareil photo
-  const [date, setDate] = useState(''); // Date de prise de vue
+const PhotoForm = ({ onPhotoAdded, onClose }) => {
+  const [title, setTitle] = useState('');
+  const [image, setImage] = useState(null);
+  const [cameraType, setCameraType] = useState('');
+  const [date, setDate] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMessage('');
 
     try {
-      const token = localStorage.getItem('token'); // Récupérer le token JWT
+      const token = localStorage.getItem('token');
       if (!token) {
-        alert('Vous devez être connecté pour ajouter une photo.');
+        setErrorMessage('Vous devez être connecté pour ajouter une photo.');
         return;
       }
 
-      // Validation : Vérifier que les champs obligatoires sont remplis
       if (!title || !date || !image) {
-        alert('Veuillez remplir tous les champs obligatoires (titre, image, date).');
+        setErrorMessage('Veuillez remplir tous les champs obligatoires (titre, image, date).');
         return;
       }
 
-      // Convertir et valider la date
-      const formattedDate = dayjs(date).format('DD/MM/YYYY');
-      if (!dayjs(formattedDate, 'DD/MM/YYYY', true).isValid()) {
-        alert('Veuillez entrer une date valide (AAAA-MM-JJ ou sélectionner dans le picker).');
+      if (!image.type.startsWith('image/')) {
+        setErrorMessage('Veuillez sélectionner un fichier image valide.');
         return;
       }
 
       const formData = new FormData();
       formData.append('title', title);
       formData.append('image', image);
-      formData.append('cameraType', cameraType); // Ajouter le type d'appareil photo
-      formData.append('date', formattedDate); // Ajouter la date formatée
+      formData.append('cameraType', cameraType);
+      formData.append('date', dayjs(date).format('YYYY-MM-DD'));
 
-      // Envoyer la requête POST avec le token dans l'en-tête
       const res = await axios.post('http://localhost:5000/api/photos', formData, {
-        headers: {
-          Authorization: `Bearer ${token}`, // Ajouter le token JWT
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      onPhotoAdded(res.data); // Mettre à jour la liste des photos après succès
-      setTitle(''); // Réinitialiser le champ titre
-      setImage(null); // Réinitialiser le fichier image
-      setCameraType(''); // Réinitialiser le type d'appareil photo
-      setDate(''); // Réinitialiser la date de prise de vue
+      if (res.status === 201) {
+        setTitle('');
+        setImage(null);
+        setCameraType('');
+        setDate('');
+
+        if (onPhotoAdded) {
+          onPhotoAdded(res.data);
+        }
+
+        // Fermer le formulaire après l'ajout
+        onClose();
+        navigate('/');
+      }
     } catch (err) {
-      console.error('Erreur lors de l\'ajout de la photo :', err.response?.data?.error || err.message);
-      alert('Erreur lors de l\'ajout de la photo. Veuillez réessayer.');
+      setErrorMessage(err.response?.data?.error || 'Erreur lors de l\'ajout de la photo.');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <label htmlFor="title">Titre : *</label>
-        <input
-          type="text"
-          id="title"
-          placeholder="Titre de la photo"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
-      </div>
-      <div>
-        <label htmlFor="image">Image : *</label>
-        <input
-          type="file"
-          id="image"
-          onChange={(e) => setImage(e.target.files[0])}
-          required
-        />
-      </div>
-      <div>
-        <label htmlFor="cameraType">Type d'appareil photo :</label>
-        <input
-          type="text"
-          id="cameraType"
-          placeholder="Exemple : Nikon D3500"
-          value={cameraType}
-          onChange={(e) => setCameraType(e.target.value)}
-        />
-      </div>
-      <div>
-        <label htmlFor="date">Date de prise de vue : *</label>
-        <input
-          type="date"
-          id="date"
-          value={date}
-          onChange={(e) => {
-            const selectedDate = e.target.value; // Format brut YYYY-MM-DD
-            setDate(selectedDate); // Mettre à jour l'état avec la date sélectionnée
-          }}
-          required
-        />
-      </div>
-      <button type="submit">Ajouter la photo</button>
-    </form>
+    <div
+      style={{
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        backgroundColor: 'white',
+        borderRadius: '10px',
+        padding: '20px',
+        boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)',
+        width: '90%',
+        maxWidth: '400px',
+        zIndex: 1000,
+      }}
+    >
+      <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Ajouter une photo</h2>
+      {errorMessage && <p style={{ color: 'red', marginBottom: '10px' }}>{errorMessage}</p>}
+      <form onSubmit={handleSubmit}>
+        <div style={{ marginBottom: '10px' }}>
+          <label htmlFor="title" style={styles.label}>Titre :</label>
+          <input
+            type="text"
+            id="title"
+            placeholder="Titre"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            style={styles.input}
+            required
+          />
+        </div>
+        <div style={{ marginBottom: '10px' }}>
+          <label htmlFor="image" style={styles.label}>Image :</label>
+          <input
+            type="file"
+            id="image"
+            accept="image/*"
+            onChange={(e) => setImage(e.target.files[0])}
+            style={styles.input}
+            required
+          />
+        </div>
+        <div style={{ marginBottom: '10px' }}>
+          <label htmlFor="cameraType" style={styles.label}>Type d'appareil photo :</label>
+          <input
+            type="text"
+            id="cameraType"
+            placeholder="Type d'appareil photo"
+            value={cameraType}
+            onChange={(e) => setCameraType(e.target.value)}
+            style={styles.input}
+          />
+        </div>
+        <div style={{ marginBottom: '20px' }}>
+          <label htmlFor="date" style={styles.label}>Date de prise de vue :</label>
+          <input
+            type="date"
+            id="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            style={styles.input}
+            required
+          />
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <button
+            type="submit"
+            style={{
+              ...styles.button,
+              backgroundColor: '#28a745',
+              marginRight: '10px',
+            }}
+          >
+            Ajouter
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              ...styles.button,
+              backgroundColor: '#dc3545',
+            }}
+          >
+            Annuler
+          </button>
+        </div>
+      </form>
+    </div>
   );
+};
+
+const styles = {
+  label: {
+    display: 'block',
+    fontWeight: 'bold',
+    marginBottom: '5px',
+  },
+  input: {
+    width: '100%',
+    padding: '8px',
+    fontSize: '14px',
+    border: '1px solid #ccc',
+    borderRadius: '5px',
+    boxSizing: 'border-box',
+  },
+  button: {
+    padding: '10px 20px',
+    border: 'none',
+    borderRadius: '5px',
+    color: 'white',
+    cursor: 'pointer',
+  },
 };
 
 export default PhotoForm;

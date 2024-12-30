@@ -1,62 +1,47 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import PhotoForm from './PhotoForm'; // Importer le composant PhotoForm
 
-const Header = ({ username, onLogout, onShowLogin, onShowRegister }) => {
-  const navigate = useNavigate();
-  const [isFormOpen, setIsFormOpen] = useState(false); // État pour gérer la visibilité du formulaire
-  const formRef = useRef(null); // Référence pour détecter les clics en dehors
-
-  // Gestion des clics en dehors du formulaire
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (formRef.current && !formRef.current.contains(event.target)) {
-        setIsFormOpen(false); // Fermer le formulaire si clic en dehors
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+const Header = ({ username, onLogout, onTogglePhotoForm, isPhotoFormOpen, onShowLogin, onShowRegister }) => {
+  const navigate = useNavigate(); // Hook pour naviguer entre les pages
 
   return (
     <header style={styles.header}>
-      <div style={styles.logo} onClick={() => navigate('/')}>
-        <h1>MernMulterApp</h1>
-      </div>
-      <div style={styles.auth}>
+      {/* Clique sur le titre pour revenir à la page principale */}
+      <h1
+        style={styles.title}
+        onClick={() => navigate('/')} // Redirection vers la page principale
+      >
+        MernMulterApp
+      </h1>
+      <div>
         {username ? (
-          <div style={styles.loggedIn}>
-            <span>Bonjour, {username} !</span>
+          <>
             <button
-              onClick={() => setIsFormOpen(!isFormOpen)}
-              style={styles.button}
+              style={{
+                ...styles.button,
+                backgroundColor: isPhotoFormOpen ? '#dc3545' : 'white',
+                color: isPhotoFormOpen ? 'white' : '#007bff',
+                border: isPhotoFormOpen ? '1px solid #dc3545' : '1px solid #007bff',
+              }}
+              onClick={onTogglePhotoForm}
             >
-              Poster
+              {isPhotoFormOpen ? 'Fermer' : 'Poster'}
             </button>
-            <button onClick={onLogout} style={styles.logoutButton}>
+            <button style={styles.button} onClick={onLogout}>
               Déconnexion
             </button>
-          </div>
+          </>
         ) : (
-          <div>
-            <button onClick={onShowLogin} style={styles.button}>
-              Se connecter
+          <>
+            <button style={styles.button} onClick={onShowLogin}>
+              Login
             </button>
-            <button onClick={onShowRegister} style={styles.button}>
-              S'inscrire
+            <button style={styles.button} onClick={onShowRegister}>
+              Register
             </button>
-          </div>
+          </>
         )}
       </div>
-      {/* Afficher le formulaire d'ajout d'image si ouvert */}
-      {isFormOpen && (
-        <div ref={formRef} style={styles.formContainer}>
-          <PhotoForm />
-        </div>
-      )}
     </header>
   );
 };
@@ -66,50 +51,29 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    padding: '10px 20px',
     backgroundColor: '#007bff',
     color: 'white',
-    padding: '10px 20px',
-    position: 'relative',
+    cursor: 'pointer', // Ajout pour rendre le titre cliquable
   },
-  logo: {
-    cursor: 'pointer',
-  },
-  auth: {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  loggedIn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
+  title: {
+    fontSize: '24px',
+    margin: 0,
+    cursor: 'pointer', // Ajout pour rendre le titre cliquable
   },
   button: {
+    marginLeft: '10px',
     backgroundColor: 'white',
     color: '#007bff',
-    border: 'none',
-    padding: '8px 15px',
-    margin: '0 5px',
-    cursor: 'pointer',
+    border: '1px solid #007bff',
+    padding: '5px 10px',
     borderRadius: '5px',
-  },
-  logoutButton: {
-    backgroundColor: '#ff4d4d',
-    color: 'white',
-    border: 'none',
-    padding: '8px 15px',
     cursor: 'pointer',
-    borderRadius: '5px',
+    transition: 'all 0.3s ease',
   },
-  formContainer: {
-    position: 'absolute',
-    top: '60px',
-    right: '20px',
-    backgroundColor: 'white',
-    padding: '20px',
-    border: '1px solid #ccc',
-    borderRadius: '8px',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    zIndex: 10,
+  message: {
+    margin: 0,
+    fontSize: '16px',
   },
 };
 

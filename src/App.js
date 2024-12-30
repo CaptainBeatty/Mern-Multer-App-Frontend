@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import axios from 'axios';
 import PhotoForm from './components/PhotoForm';
@@ -6,18 +6,22 @@ import PhotoList from './components/PhotoList';
 import PhotoDetails from './components/PhotoDetails';
 import Register from './components/Register';
 import Login from './components/Login';
-import Header from './components/Header'; // Importer le composant Header
+import Header from './components/Header';
+
 import { jwtDecode } from 'jwt-decode';
 
 const App = () => {
-  const [photos, setPhotos] = useState([]); // Stocker les photos
-  const [username, setUsername] = useState(''); // Nom de l'utilisateur connecté
-  const [currentUserId, setCurrentUserId] = useState(null); // ID utilisateur
-  const [showLogin, setShowLogin] = useState(false); // Afficher ou masquer Login
-  const [showRegister, setShowRegister] = useState(false); // Afficher ou masquer Register
-  const [showPhotoForm, setShowPhotoForm] = useState(false); // Afficher ou masquer le formulaire d'ajout de photo
+  const [photos, setPhotos] = useState([]);
+  const [username, setUsername] = useState('');
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [showPhotoForm, setShowPhotoForm] = useState(false);
 
-  // Récupérer les photos depuis le backend
+  const loginFormRef = useRef(null);
+  const registerFormRef = useRef(null);
+
+  // Charger les photos depuis le backend
   const fetchPhotos = async () => {
     try {
       const res = await axios.get('http://localhost:5000/api/photos');
@@ -27,7 +31,7 @@ const App = () => {
     }
   };
 
-  // Fonction appelée après une connexion réussie
+  // Gérer la connexion
   const handleLoginSuccess = (username) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -40,17 +44,22 @@ const App = () => {
     fetchPhotos();
   };
 
-  // Déconnexion
+  // Gérer la déconnexion
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     setUsername('');
     setCurrentUserId(null);
-    setShowPhotoForm(false); // Cacher le formulaire d'ajout au logout
+    setShowPhotoForm(false);
     fetchPhotos();
   };
 
-  // Charger les informations utilisateur et les photos au démarrage
+  // Fermer le formulaire d'ajout de photo
+  const closePhotoForm = () => {
+    setShowPhotoForm(false);
+  };
+
+  // Charger les données utilisateur et les photos au montage du composant
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUsername = localStorage.getItem('username');
@@ -62,68 +71,80 @@ const App = () => {
     fetchPhotos();
   }, []);
 
-  const handlePhotoAdded = (newPhoto) => {
-    setPhotos([newPhoto, ...photos]);
-    setShowPhotoForm(false); // Cacher le formulaire après ajout
+  // Fermer les formulaires au clic à l'extérieur
+  const handleClickOutside = (e) => {
+    if (
+      !loginFormRef.current?.contains(e.target) &&
+      !registerFormRef.current?.contains(e.target)
+    ) {
+      setShowLogin(false);
+      setShowRegister(false);
+    }
   };
 
-  const handlePhotoDeleted = (id) => {
-    setPhotos(photos.filter((photo) => photo._id !== id));
-  };
-
-  const handlePhotoUpdated = (updatedPhoto) => {
-    setPhotos(photos.map((photo) => (photo._id === updatedPhoto._id ? updatedPhoto : photo)));
-  };
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <Router>
-      {/* Intégration du Header */}
       <Header
         username={username}
         onLogout={handleLogout}
         onShowLogin={() => {
-          setShowLogin(true);
+          setShowLogin(!showLogin);
           setShowRegister(false);
+          setShowPhotoForm(false);
         }}
         onShowRegister={() => {
-          setShowRegister(true);
+          setShowRegister(!showRegister);
           setShowLogin(false);
+          setShowPhotoForm(false);
         }}
-        onTogglePhotoForm={() => setShowPhotoForm(!showPhotoForm)} // Gérer l'affichage du formulaire d'ajout
+        onTogglePhotoForm={() => {
+          setShowPhotoForm(!showPhotoForm);
+          setShowLogin(false);
+          setShowRegister(false);
+        }}
+        isPhotoFormOpen={showPhotoForm}
       />
       <div style={{ padding: '20px' }}>
+        {showLogin && (
+          <div ref={loginFormRef} style={{ position: 'relative', zIndex: 100 }}>
+            <Login onLoginSuccess={handleLoginSuccess} />
+          </div>
+        )}
+        {showRegister && (
+          <div ref={registerFormRef} style={{ position: 'relative', zIndex: 100 }}>
+            <Register />
+          </div>
+        )}
         <Routes>
-          {/* Route pour la page principale */}
           <Route
             path="/"
             element={
               <div>
-                {/* Login et Register affichés conditionnellement */}
-                {showLogin && <Login onLoginSuccess={handleLoginSuccess} />}
-                {showRegister && <Register />}
-                {/* Formulaire d'ajout de photo */}
                 {showPhotoForm && username && (
-                  <div style={{ marginBottom: '20px' }}>
-                    <PhotoForm onPhotoAdded={handlePhotoAdded} />
-                  </div>
+                  <PhotoForm
+                    onPhotoAdded={fetchPhotos} // Recharger les photos après ajout
+                    onClose={closePhotoForm} // Fermer le formulaire
+                  />
                 )}
-                {/* Liste des photos */}
                 <PhotoList
                   photos={photos}
-                  onPhotoDeleted={handlePhotoDeleted}
-                  onPhotoUpdated={handlePhotoUpdated}
+                  onPhotoDeleted={fetchPhotos} // Recharger les photos après suppression
                   currentUserId={currentUserId}
                 />
               </div>
             }
           />
-          {/* Route pour les détails d'une photo */}
           <Route
             path="/photo/:id"
             element={
               <PhotoDetails
                 currentUserId={currentUserId}
-                onPhotoDeleted={handlePhotoDeleted}
+                onPhotoDeleted={fetchPhotos}
               />
             }
           />

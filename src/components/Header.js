@@ -13,7 +13,8 @@ const Header = ({ username, onLogout, onTogglePhotoForm, isPhotoFormOpen, onShow
       >
         MernMulterApp
       </h1>
-      <div>
+      <div style={styles.rightSection}>
+        {username && <span style={styles.welcomeMessage}>Bienvenue {username}</span>}
         {username ? (
           <>
             <button
@@ -60,6 +61,15 @@ const styles = {
     fontSize: '24px',
     margin: 0,
     cursor: 'pointer', // Ajout pour rendre le titre cliquable
+  },
+  rightSection: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  welcomeMessage: {
+    marginRight: '10px',
+    fontSize: '16px',
+    fontWeight: 'bold',
   },
   button: {
     marginLeft: '10px',

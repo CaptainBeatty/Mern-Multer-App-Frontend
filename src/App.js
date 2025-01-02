@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import axios from 'axios';
 import PhotoForm from './components/PhotoForm';
@@ -17,9 +17,6 @@ const App = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [showPhotoForm, setShowPhotoForm] = useState(false);
-
-  const loginFormRef = useRef(null);
-  const registerFormRef = useRef(null);
 
   // Charger les photos depuis le backend
   const fetchPhotos = async () => {
@@ -51,12 +48,28 @@ const App = () => {
     setUsername('');
     setCurrentUserId(null);
     setShowPhotoForm(false);
+    setShowLogin(false);
+    setShowRegister(false);
     fetchPhotos();
   };
 
-  // Fermer le formulaire d'ajout de photo
-  const closePhotoForm = () => {
+  // Gérer la bascule des formulaires
+  const handleLoginToggle = () => {
+    setShowLogin((prevState) => !prevState);
+    setShowRegister(false);
     setShowPhotoForm(false);
+  };
+
+  const handleRegisterToggle = () => {
+    setShowRegister((prevState) => !prevState);
+    setShowLogin(false);
+    setShowPhotoForm(false);
+  };
+
+  const handlePhotoFormToggle = () => {
+    setShowPhotoForm((prevState) => !prevState);
+    setShowLogin(false);
+    setShowRegister(false);
   };
 
   // Charger les données utilisateur et les photos au montage du composant
@@ -71,52 +84,26 @@ const App = () => {
     fetchPhotos();
   }, []);
 
-  // Fermer les formulaires au clic à l'extérieur
-  const handleClickOutside = (e) => {
-    if (
-      !loginFormRef.current?.contains(e.target) &&
-      !registerFormRef.current?.contains(e.target)
-    ) {
-      setShowLogin(false);
-      setShowRegister(false);
-    }
-  };
-
-  useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   return (
     <Router>
       <Header
         username={username}
         onLogout={handleLogout}
-        onShowLogin={() => {
-          setShowLogin(!showLogin);
-          setShowRegister(false);
-          setShowPhotoForm(false);
-        }}
-        onShowRegister={() => {
-          setShowRegister(!showRegister);
-          setShowLogin(false);
-          setShowPhotoForm(false);
-        }}
-        onTogglePhotoForm={() => {
-          setShowPhotoForm(!showPhotoForm);
-          setShowLogin(false);
-          setShowRegister(false);
-        }}
+        onShowLogin={handleLoginToggle}
+        onShowRegister={handleRegisterToggle}
+        onTogglePhotoForm={handlePhotoFormToggle}
         isPhotoFormOpen={showPhotoForm}
+        isLoginOpen={showLogin}
+        isRegisterOpen={showRegister}
       />
       <div style={{ padding: '20px' }}>
         {showLogin && (
-          <div ref={loginFormRef} style={{ position: 'relative', zIndex: 100 }}>
+          <div style={{ position: 'relative', zIndex: 100 }}>
             <Login onLoginSuccess={handleLoginSuccess} />
           </div>
         )}
         {showRegister && (
-          <div ref={registerFormRef} style={{ position: 'relative', zIndex: 100 }}>
+          <div style={{ position: 'relative', zIndex: 100 }}>
             <Register />
           </div>
         )}
@@ -127,13 +114,13 @@ const App = () => {
               <div>
                 {showPhotoForm && username && (
                   <PhotoForm
-                    onPhotoAdded={fetchPhotos} // Recharger les photos après ajout
-                    onClose={closePhotoForm} // Fermer le formulaire
+                    onPhotoAdded={fetchPhotos}
+                    onClose={() => setShowPhotoForm(false)}
                   />
                 )}
                 <PhotoList
                   photos={photos}
-                  onPhotoDeleted={fetchPhotos} // Recharger les photos après suppression
+                  onPhotoDeleted={fetchPhotos}
                   currentUserId={currentUserId}
                 />
               </div>
@@ -142,10 +129,19 @@ const App = () => {
           <Route
             path="/photo/:id"
             element={
-              <PhotoDetails
+              <div>
+                {showPhotoForm && username && (
+                  <PhotoForm
+                    onPhotoAdded={fetchPhotos}
+                    onClose={() => setShowPhotoForm(false)}
+                  />
+                )}
+                <PhotoDetails
                 currentUserId={currentUserId}
                 onPhotoDeleted={fetchPhotos}
               />
+              </div>
+              
             }
           />
         </Routes>

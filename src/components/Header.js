@@ -1,16 +1,21 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const Header = ({ username, onLogout, onTogglePhotoForm, isPhotoFormOpen, onShowLogin, onShowRegister }) => {
+const Header = ({
+  username,
+  onLogout,
+  onTogglePhotoForm,
+  isPhotoFormOpen,
+  onShowLogin,
+  onShowRegister,
+  isLoginOpen,
+  isRegisterOpen,
+}) => {
   const navigate = useNavigate(); // Hook pour naviguer entre les pages
 
   return (
     <header style={styles.header}>
-      {/* Clique sur le titre pour revenir à la page principale */}
-      <h1
-        style={styles.title}
-        onClick={() => navigate('/')} // Redirection vers la page principale
-      >
+      <h1 style={styles.title} onClick={() => navigate('/')}>
         MernMulterApp
       </h1>
       <div style={styles.rightSection}>
@@ -34,11 +39,27 @@ const Header = ({ username, onLogout, onTogglePhotoForm, isPhotoFormOpen, onShow
           </>
         ) : (
           <>
-            <button style={styles.button} onClick={onShowLogin}>
-              Login
+            <button
+              style={{
+                ...styles.button,
+                backgroundColor: isLoginOpen ? '#dc3545' : 'white',
+                color: isLoginOpen ? 'white' : '#007bff',
+                border: isLoginOpen ? '1px solid #dc3545' : '1px solid #007bff',
+              }}
+              onClick={onShowLogin}
+            >
+              {isLoginOpen ? 'Fermer' : 'Login'}
             </button>
-            <button style={styles.button} onClick={onShowRegister}>
-              Register
+            <button
+              style={{
+                ...styles.button,
+                backgroundColor: isRegisterOpen ? '#dc3545' : 'white',
+                color: isRegisterOpen ? 'white' : '#007bff',
+                border: isRegisterOpen ? '1px solid #dc3545' : '1px solid #007bff',
+              }}
+              onClick={onShowRegister}
+            >
+              {isRegisterOpen ? 'Fermer' : 'Register'}
             </button>
           </>
         )}
@@ -55,12 +76,11 @@ const styles = {
     padding: '10px 20px',
     backgroundColor: '#007bff',
     color: 'white',
-    cursor: 'pointer', // Ajout pour rendre le titre cliquable
   },
   title: {
     fontSize: '24px',
     margin: 0,
-    cursor: 'pointer', // Ajout pour rendre le titre cliquable
+    cursor: 'pointer',
   },
   rightSection: {
     display: 'flex',
@@ -80,10 +100,6 @@ const styles = {
     borderRadius: '5px',
     cursor: 'pointer',
     transition: 'all 0.3s ease',
-  },
-  message: {
-    margin: 0,
-    fontSize: '16px',
   },
 };
 

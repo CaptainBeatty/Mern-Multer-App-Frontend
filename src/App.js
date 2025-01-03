@@ -7,7 +7,7 @@ import PhotoDetails from './components/PhotoDetails';
 import Register from './components/Register';
 import Login from './components/Login';
 import Header from './components/Header';
-
+import PrivateRoute from './services/PrivateRoute'; // Import PrivateRoute
 import { jwtDecode } from 'jwt-decode';
 
 const App = () => {
@@ -18,7 +18,7 @@ const App = () => {
   const [showRegister, setShowRegister] = useState(false);
   const [showPhotoForm, setShowPhotoForm] = useState(false);
 
-  // Charger les photos depuis le backend
+  // Load photos from the backend
   const fetchPhotos = async () => {
     try {
       const res = await axios.get('http://localhost:5000/api/photos');
@@ -28,7 +28,7 @@ const App = () => {
     }
   };
 
-  // Gérer la connexion
+  // Handle login success
   const handleLoginSuccess = (username) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -41,7 +41,7 @@ const App = () => {
     fetchPhotos();
   };
 
-  // Gérer la déconnexion
+  // Handle logout
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
@@ -53,26 +53,28 @@ const App = () => {
     fetchPhotos();
   };
 
-  // Gérer la bascule des formulaires
+  // Toggle login modal
   const handleLoginToggle = () => {
     setShowLogin((prevState) => !prevState);
     setShowRegister(false);
     setShowPhotoForm(false);
   };
 
+  // Toggle register modal
   const handleRegisterToggle = () => {
     setShowRegister((prevState) => !prevState);
     setShowLogin(false);
     setShowPhotoForm(false);
   };
 
+  // Toggle photo form modal
   const handlePhotoFormToggle = () => {
     setShowPhotoForm((prevState) => !prevState);
     setShowLogin(false);
     setShowRegister(false);
   };
 
-  // Charger les données utilisateur et les photos au montage du composant
+  // Load user data and photos on component mount
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUsername = localStorage.getItem('username');
@@ -108,6 +110,7 @@ const App = () => {
           </div>
         )}
         <Routes>
+          {/* Public routes */}
           <Route
             path="/"
             element={
@@ -127,21 +130,41 @@ const App = () => {
             }
           />
           <Route
+            path="/register"
+            element={<Register />}
+          />
+          <Route
+            path="/login"
+            element={<Login onLoginSuccess={handleLoginSuccess} />}
+          />
+
+          {/* Protected routes using PrivateRoute */}
+          <Route
             path="/photo/:id"
             element={
               <div>
+                <PhotoDetails
+                  currentUserId={currentUserId}
+                  onPhotoDeleted={fetchPhotos}
+                />
                 {showPhotoForm && username && (
                   <PhotoForm
                     onPhotoAdded={fetchPhotos}
                     onClose={() => setShowPhotoForm(false)}
                   />
                 )}
-                <PhotoDetails
-                currentUserId={currentUserId}
-                onPhotoDeleted={fetchPhotos}
-              />
-              </div>
-              
+            </div>
+            }
+          />
+          <Route
+            path="/add-photo"
+            element={
+              <PrivateRoute>
+                <PhotoForm
+                  onPhotoAdded={fetchPhotos}
+                  onClose={() => setShowPhotoForm(false)}
+                />
+              </PrivateRoute>
             }
           />
         </Routes>

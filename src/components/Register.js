@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../services/axiosInstance'; // Utilisation de axiosInstance
 
 const Register = () => {
   const [formData, setFormData] = useState({ username: '', email: '', password: '' });
@@ -15,7 +15,7 @@ const Register = () => {
     setLoading(true);
     setErrorMessage('');
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', formData);
+      const res = await axiosInstance.post('/auth/register', formData); // Utilisation de axiosInstance
       alert(res.data.message); // Afficher un message de succès
       setFormData({ username: '', email: '', password: '' }); // Réinitialiser le formulaire
     } catch (err) {

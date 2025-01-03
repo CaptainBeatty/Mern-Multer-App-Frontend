@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../services/axiosInstance'; // Utiliser axiosInstance pour les requêtes avec gestion automatique des headers
 
 const Login = ({ onLoginSuccess }) => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -11,7 +11,7 @@ const Login = ({ onLoginSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', formData);
+      const res = await axiosInstance.post('/auth/login', formData); // Remplacer l'URL par axiosInstance
 
       // Stocker le token JWT dans localStorage
       localStorage.setItem('token', res.data.token);
@@ -48,6 +48,7 @@ const Login = ({ onLoginSuccess }) => {
           id="email"
           name="email"
           placeholder="Votre email"
+          value={formData.email}
           onChange={handleChange}
           style={styles.input}
           required
@@ -61,6 +62,7 @@ const Login = ({ onLoginSuccess }) => {
           id="password"
           name="password"
           placeholder="Votre mot de passe"
+          value={formData.password}
           onChange={handleChange}
           style={styles.input}
           required

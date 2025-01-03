@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../services/axiosInstance'; // Utilisation de axiosInstance
 import dayjs from 'dayjs';
 
 const PhotoForm = ({ onPhotoAdded, onClose }) => {
@@ -16,12 +16,6 @@ const PhotoForm = ({ onPhotoAdded, onClose }) => {
     setErrorMessage('');
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setErrorMessage('Vous devez être connecté pour ajouter une photo.');
-        return;
-      }
-
       if (!title || !date || !image) {
         setErrorMessage('Veuillez remplir tous les champs obligatoires (titre, image, date).');
         return;
@@ -38,9 +32,7 @@ const PhotoForm = ({ onPhotoAdded, onClose }) => {
       formData.append('cameraType', cameraType);
       formData.append('date', dayjs(date).format('YYYY-MM-DD'));
 
-      const res = await axios.post('http://localhost:5000/api/photos', formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.post('/photos', formData); // Utilisation de axiosInstance
 
       if (res.status === 201) {
         setTitle('');

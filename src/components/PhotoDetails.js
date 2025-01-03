@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../services/axiosInstance';
 import dayjs from 'dayjs';
 
 const PhotoDetails = ({ currentUserId, onPhotoDeleted }) => {
@@ -16,7 +16,7 @@ const PhotoDetails = ({ currentUserId, onPhotoDeleted }) => {
   useEffect(() => {
     const fetchPhoto = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/photos/${id}`);
+        const res = await axiosInstance.get(`/photos/${id}`);
         const photoData = res.data;
 
         setPhoto(photoData);
@@ -41,52 +41,35 @@ const PhotoDetails = ({ currentUserId, onPhotoDeleted }) => {
   // Gérer la mise à jour de la photo
   const handleUpdate = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Vous devez être connecté pour modifier une photo.');
-        return;
-      }
-  
       if (!dayjs(newDate, 'YYYY-MM-DD', true).isValid()) {
         alert('Veuillez entrer une date valide (AAAA-MM-JJ).');
         return;
       }
-  
+
       const formData = new FormData();
       formData.append('title', newTitle || photo.title);
       formData.append('cameraType', newCameraType || photo.cameraType);
       formData.append('date', dayjs(newDate, 'YYYY-MM-DD').format('D MMMM YYYY'));
-  
-      await axios.put(`http://localhost:5000/api/photos/${id}`, formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-  
+
+      await axiosInstance.put(`/photos/${id}`, formData);
+
       alert('Photo mise à jour avec succès.');
-  
+
       // Re-fetch les données pour mettre à jour l'état
-      const updatedPhoto = await axios.get(`http://localhost:5000/api/photos/${id}`);
+      const updatedPhoto = await axiosInstance.get(`/photos/${id}`);
       setPhoto(updatedPhoto.data);
-  
+
       setIsEditing(false); // Quitter le mode édition
     } catch (err) {
       console.error('Erreur lors de la modification de la photo:', err);
       alert('Erreur lors de la modification de la photo. Veuillez réessayer.');
     }
   };
-  
 
   // Gérer la suppression de la photo
   const handleDelete = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Vous devez être connecté pour supprimer une photo.');
-        return;
-      }
-
-      await axios.delete(`http://localhost:5000/api/photos/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axiosInstance.delete(`/photos/${id}`);
       alert('Photo supprimée avec succès.');
 
       if (onPhotoDeleted) {

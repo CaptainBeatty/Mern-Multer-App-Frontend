@@ -7,6 +7,7 @@ import PhotoDetails from './components/PhotoDetails';
 import Register from './components/Register';
 import Login from './components/Login';
 import Header from './components/Header';
+import ForgotPassword from './components/ForgotPassword';
 import PrivateRoute from './services/PrivateRoute'; // Import PrivateRoute
 import { jwtDecode } from 'jwt-decode';
 
@@ -16,6 +17,7 @@ const App = () => {
   const [currentUserId, setCurrentUserId] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showPhotoForm, setShowPhotoForm] = useState(false);
 
   // Load photos from the backend
@@ -50,6 +52,7 @@ const App = () => {
     setShowPhotoForm(false);
     setShowLogin(false);
     setShowRegister(false);
+    setShowForgotPassword(false);
     fetchPhotos();
   };
 
@@ -57,6 +60,7 @@ const App = () => {
   const handleLoginToggle = () => {
     setShowLogin((prevState) => !prevState);
     setShowRegister(false);
+    setShowForgotPassword(false);
     setShowPhotoForm(false);
   };
 
@@ -64,7 +68,14 @@ const App = () => {
   const handleRegisterToggle = () => {
     setShowRegister((prevState) => !prevState);
     setShowLogin(false);
+    setShowForgotPassword(false);
     setShowPhotoForm(false);
+  };
+
+  // Toggle forgot password modal
+  const handleForgotPasswordToggle = () => {
+    setShowForgotPassword((prevState) => !prevState);
+    setShowLogin(false);
   };
 
   // Toggle photo form modal
@@ -72,6 +83,7 @@ const App = () => {
     setShowPhotoForm((prevState) => !prevState);
     setShowLogin(false);
     setShowRegister(false);
+    setShowForgotPassword(false);
   };
 
   // Load user data and photos on component mount
@@ -99,9 +111,18 @@ const App = () => {
         isRegisterOpen={showRegister}
       />
       <div style={{ padding: '20px' }}>
-        {showLogin && (
+        {showLogin && !showForgotPassword && (
           <div style={{ position: 'relative', zIndex: 100 }}>
-            <Login onLoginSuccess={handleLoginSuccess} />
+            <Login
+              onLoginSuccess={handleLoginSuccess}
+              onClose={() => setShowLogin(false)}
+              onForgotPassword={handleForgotPasswordToggle} // Passe la fonction pour basculer ForgotPassword
+            />
+          </div>
+        )}
+        {showForgotPassword && (
+          <div style={{ position: 'relative', zIndex: 100 }}>
+            <ForgotPassword onCancel={handleLoginToggle} /> {/* Bouton Annuler revient au Login */}
           </div>
         )}
         {showRegister && (
@@ -129,13 +150,14 @@ const App = () => {
               </div>
             }
           />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
           <Route
-            path="/register"
-            element={<Register />}
-          />
-          <Route
-            path="/login"
-            element={<Login onLoginSuccess={handleLoginSuccess} />}
+            path="/forgot-password"
+            element={<ForgotPassword onCancel={() => {
+              setShowForgotPassword(false);
+              setShowLogin(true);
+            }} />}
           />
 
           {/* Protected routes using PrivateRoute */}
@@ -153,7 +175,7 @@ const App = () => {
                     onClose={() => setShowPhotoForm(false)}
                   />
                 )}
-            </div>
+              </div>
             }
           />
           <Route

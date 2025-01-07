@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom'; // Importer Link pour la navigation vers la page de récupération
 import axiosInstance from '../services/axiosInstance'; // Utiliser axiosInstance pour les requêtes avec gestion automatique des headers
 
-const Login = ({ onLoginSuccess }) => {
+const Login = ({ onLoginSuccess, onClose }) => {
   const [formData, setFormData] = useState({ email: '', password: '' });
 
   const handleChange = (e) => {
@@ -11,7 +12,7 @@ const Login = ({ onLoginSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axiosInstance.post('/auth/login', formData); // Remplacer l'URL par axiosInstance
+      const res = await axiosInstance.post('/auth/login', formData);
 
       // Stocker le token JWT dans localStorage
       localStorage.setItem('token', res.data.token);
@@ -84,6 +85,17 @@ const Login = ({ onLoginSuccess }) => {
       >
         Se connecter
       </button>
+
+      {/* Lien vers la fonctionnalité de récupération de mot de passe */}
+      <div style={{ textAlign: 'center', marginTop: '15px' }}>
+        <Link
+          to="/forgot-password"
+          style={{ color: '#007bff', textDecoration: 'none' }}
+          onClick={onClose} // Appeler la fonction pour fermer le formulaire
+        >
+          Mot de passe oublié ?
+        </Link>
+      </div>
     </form>
   );
 };

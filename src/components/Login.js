@@ -1,9 +1,24 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom'; // Importer Link pour la navigation vers la page de récupération
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom'; // Importer Link pour la navigation et useLocation pour récupérer l'email
 import axiosInstance from '../services/axiosInstance'; // Utiliser axiosInstance pour les requêtes avec gestion automatique des headers
 
 const Login = ({ onLoginSuccess, onClose }) => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const location = useLocation();
+  const navigate = useNavigate(); // Hook pour gérer la redirection
+  const [formData, setFormData] = useState({
+    email: location.state?.email || '', // Pré-remplit l'email depuis location.state
+    password: '',
+  });
+
+  useEffect(() => {
+    // Met à jour uniquement si location.state.email existe
+    if (location.state?.email) {
+      setFormData((prevState) => ({
+        ...prevState,
+        email: location.state.email,
+      }));
+    }
+  }, [location.state]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -18,7 +33,11 @@ const Login = ({ onLoginSuccess, onClose }) => {
       localStorage.setItem('token', res.data.token);
 
       // Passe le nom d'utilisateur au parent
-      onLoginSuccess(res.data.username);
+      if (onLoginSuccess) onLoginSuccess(res.data.username);
+
+      // Fermer le formulaire de connexion après une connexion réussie
+      if (onClose) onClose();
+      navigate('/');
     } catch (err) {
       console.error('Erreur lors de la connexion:', err.response?.data?.error || err.message);
       alert('Erreur lors de la connexion. Veuillez vérifier vos informations.');
@@ -43,7 +62,9 @@ const Login = ({ onLoginSuccess, onClose }) => {
       </h2>
 
       <div style={{ marginBottom: '10px' }}>
-        <label htmlFor="email" style={styles.label}>Email :</label>
+        <label htmlFor="email" style={styles.label}>
+          Email :
+        </label>
         <input
           type="email"
           id="email"
@@ -57,7 +78,9 @@ const Login = ({ onLoginSuccess, onClose }) => {
       </div>
 
       <div style={{ marginBottom: '10px' }}>
-        <label htmlFor="password" style={styles.label}>Mot de passe :</label>
+        <label htmlFor="password" style={styles.label}>
+          Mot de passe :
+        </label>
         <input
           type="password"
           id="password"
@@ -91,7 +114,9 @@ const Login = ({ onLoginSuccess, onClose }) => {
         <Link
           to="/forgot-password"
           style={{ color: '#007bff', textDecoration: 'none' }}
-          onClick={onClose} // Appeler la fonction pour fermer le formulaire
+          onClick={() => {
+            if (onClose) onClose();
+          }}
         >
           Mot de passe oublié ?
         </Link>

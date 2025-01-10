@@ -8,19 +8,18 @@ import Register from './components/Register';
 import Login from './components/Login';
 import Header from './components/Header';
 import ForgotPassword from './components/ForgotPassword';
-import PrivateRoute from './services/PrivateRoute'; // Import PrivateRoute
+import ResetPassword from './components/ResetPassword';
+import PrivateRoute from './services/PrivateRoute';
 import { jwtDecode } from 'jwt-decode';
 
 const App = () => {
   const [photos, setPhotos] = useState([]);
   const [username, setUsername] = useState('');
   const [currentUserId, setCurrentUserId] = useState(null);
-  const [showLogin, setShowLogin] = useState(false);
-  const [showRegister, setShowRegister] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [activeModal, setActiveModal] = useState(null); // Contrôle global des modales
   const [showPhotoForm, setShowPhotoForm] = useState(false);
 
-  // Load photos from the backend
+  // Charger les photos depuis le backend
   const fetchPhotos = async () => {
     try {
       const res = await axios.get('http://localhost:5000/api/photos');
@@ -30,7 +29,7 @@ const App = () => {
     }
   };
 
-  // Handle login success
+  // Gestion de la connexion réussie
   const handleLoginSuccess = (username) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -38,55 +37,42 @@ const App = () => {
       setUsername(username);
       setCurrentUserId(decodedToken.id);
       localStorage.setItem('username', username);
-      setShowLogin(false);
+      setActiveModal(null); // Ferme toutes les modales
     }
     fetchPhotos();
   };
 
-  // Handle logout
+  // Gestion de la déconnexion
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     setUsername('');
     setCurrentUserId(null);
     setShowPhotoForm(false);
-    setShowLogin(false);
-    setShowRegister(false);
-    setShowForgotPassword(false);
+    setActiveModal(null); // Ferme toutes les modales
     fetchPhotos();
   };
 
-  // Toggle login modal
-  const handleLoginToggle = () => {
-    setShowLogin((prevState) => !prevState);
-    setShowRegister(false);
-    setShowForgotPassword(false);
-    setShowPhotoForm(false);
+  // Gestion des modales avec fermeture si déjà ouvertes
+  const handleShowLogin = () => {
+    setActiveModal((prev) => (prev === 'login' ? null : 'login'));
   };
 
-  // Toggle register modal
-  const handleRegisterToggle = () => {
-    setShowRegister((prevState) => !prevState);
-    setShowLogin(false);
-    setShowForgotPassword(false);
-    setShowPhotoForm(false);
+  const handleShowRegister = () => {
+    setActiveModal((prev) => (prev === 'register' ? null : 'register'));
   };
 
-  // Toggle forgot password modal
-  const handleForgotPasswordToggle = () => {
-    setShowForgotPassword((prevState) => !prevState);
-    setShowLogin(false);
+  const handleShowForgotPassword = () => {
+    setActiveModal('forgotPassword');
   };
 
-  // Toggle photo form modal
+  // Toggle formulaire photo
   const handlePhotoFormToggle = () => {
     setShowPhotoForm((prevState) => !prevState);
-    setShowLogin(false);
-    setShowRegister(false);
-    setShowForgotPassword(false);
+    setActiveModal(null); // Ferme toutes les autres modales
   };
 
-  // Load user data and photos on component mount
+  // Charger les données utilisateur et photos au montage du composant
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUsername = localStorage.getItem('username');
@@ -103,35 +89,40 @@ const App = () => {
       <Header
         username={username}
         onLogout={handleLogout}
-        onShowLogin={handleLoginToggle}
-        onShowRegister={handleRegisterToggle}
+        onShowLogin={handleShowLogin}
+        onShowRegister={handleShowRegister}
         onTogglePhotoForm={handlePhotoFormToggle}
         isPhotoFormOpen={showPhotoForm}
-        isLoginOpen={showLogin}
-        isRegisterOpen={showRegister}
+        isLoginOpen={activeModal === 'login'}
+        isRegisterOpen={activeModal === 'register'}
       />
       <div style={{ padding: '20px' }}>
-        {showLogin && !showForgotPassword && (
+        {/* Modales */}
+        {activeModal === 'login' && (
           <div style={{ position: 'relative', zIndex: 100 }}>
             <Login
               onLoginSuccess={handleLoginSuccess}
-              onClose={() => setShowLogin(false)}
-              onForgotPassword={handleForgotPasswordToggle} // Passe la fonction pour basculer ForgotPassword
+              onClose={() => setActiveModal(null)} // Ferme le formulaire login
+              onForgotPassword={handleShowForgotPassword} // Affiche ForgotPassword
             />
           </div>
         )}
-        {showForgotPassword && (
+        {activeModal === 'forgotPassword' && (
           <div style={{ position: 'relative', zIndex: 100 }}>
-            <ForgotPassword onCancel={handleLoginToggle} /> {/* Bouton Annuler revient au Login */}
+            <ForgotPassword
+              onCancel={() => setActiveModal(null)} // Ferme ForgotPassword
+            />
           </div>
         )}
-        {showRegister && (
+        {activeModal === 'register' && (
           <div style={{ position: 'relative', zIndex: 100 }}>
-            <Register />
+            <Register onClose={() => setActiveModal(null)} /> {/* Ajout de la gestion de fermeture */}
           </div>
         )}
+
+        {/* Routes */}
         <Routes>
-          {/* Public routes */}
+          {/* Routes publiques */}
           <Route
             path="/"
             element={
@@ -150,17 +141,17 @@ const App = () => {
               </div>
             }
           />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+          <Route path="/forgot-password" element={<ForgotPassword onCancel={() => setActiveModal(null)} />} />
           <Route
-            path="/forgot-password"
-            element={<ForgotPassword onCancel={() => {
-              setShowForgotPassword(false);
-              setShowLogin(true);
-            }} />}
+            path="/reset-password/:token"
+            element={
+              <ResetPassword
+                onShowLogin={() => setActiveModal('login')} // Affiche uniquement Login après reset
+              />
+            }
           />
 
-          {/* Protected routes using PrivateRoute */}
+          {/* Routes protégées avec PrivateRoute */}
           <Route
             path="/photo/:id"
             element={

@@ -10,6 +10,7 @@ const PhotoDetails = ({ currentUserId, onPhotoDeleted }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newCameraType, setNewCameraType] = useState('');
+  const [newLocation, setNewLocation] = useState(''); // Nouveau champ pour le lieu
   const [newDate, setNewDate] = useState('');
 
   // Charger les détails de la photo
@@ -24,6 +25,7 @@ const PhotoDetails = ({ currentUserId, onPhotoDeleted }) => {
         // Pré-remplir les champs pour l'édition
         setNewTitle(photoData.title);
         setNewCameraType(photoData.cameraType || '');
+        setNewLocation(photoData.location || ''); // Pré-remplir le lieu
         setNewDate(
           photoData.date
             ? dayjs(photoData.date, 'D MMMM YYYY').format('YYYY-MM-DD') // Convertir pour le champ de type date
@@ -49,6 +51,7 @@ const PhotoDetails = ({ currentUserId, onPhotoDeleted }) => {
       const formData = new FormData();
       formData.append('title', newTitle || photo.title);
       formData.append('cameraType', newCameraType || photo.cameraType);
+      formData.append('location', newLocation || photo.location); // Ajouter le lieu
       formData.append('date', dayjs(newDate, 'YYYY-MM-DD').format('D MMMM YYYY'));
 
       await axiosInstance.put(`/photos/${id}`, formData);
@@ -95,6 +98,7 @@ const PhotoDetails = ({ currentUserId, onPhotoDeleted }) => {
         <div style={{ marginTop: '15px' }}>
           <p><strong>Auteur :</strong> {photo.authorName || 'Utilisateur inconnu'}</p>
           <p><strong>Type d'appareil :</strong> {photo.cameraType || 'Non spécifié'}</p>
+          <p><strong>Lieu :</strong> {photo.location || 'Non spécifié'}</p> {/* Affichage du lieu */}
           <p><strong>Date :</strong> {photo.date || 'Non spécifiée'}</p>
         </div>
 
@@ -114,6 +118,13 @@ const PhotoDetails = ({ currentUserId, onPhotoDeleted }) => {
                   value={newCameraType}
                   onChange={(e) => setNewCameraType(e.target.value)}
                   placeholder="Type d'appareil photo"
+                  style={{ display: 'block', marginBottom: '10px', padding: '8px', width: '100%' }}
+                />
+                <input
+                  type="text"
+                  value={newLocation}
+                  onChange={(e) => setNewLocation(e.target.value)} // Modification du lieu
+                  placeholder="Lieu"
                   style={{ display: 'block', marginBottom: '10px', padding: '8px', width: '100%' }}
                 />
                 <input

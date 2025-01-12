@@ -7,6 +7,7 @@ const PhotoForm = ({ onPhotoAdded, onClose }) => {
   const [title, setTitle] = useState('');
   const [image, setImage] = useState(null);
   const [cameraType, setCameraType] = useState('');
+  const [location, setLocation] = useState(''); // Nouveau champ pour le lieu
   const [date, setDate] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ const PhotoForm = ({ onPhotoAdded, onClose }) => {
     setErrorMessage('');
 
     try {
-      if (!title || !date || !image) {
+      if (!title || !date || !image || !location) {
         setErrorMessage('Veuillez remplir tous les champs obligatoires (titre, image, date).');
         return;
       }
@@ -30,6 +31,7 @@ const PhotoForm = ({ onPhotoAdded, onClose }) => {
       formData.append('title', title);
       formData.append('image', image);
       formData.append('cameraType', cameraType);
+      formData.append('location', location); // Ajout du lieu
       formData.append('date', dayjs(date).format('YYYY-MM-DD'));
 
       const res = await axiosInstance.post('/photos', formData); // Utilisation de axiosInstance
@@ -38,6 +40,7 @@ const PhotoForm = ({ onPhotoAdded, onClose }) => {
         setTitle('');
         setImage(null);
         setCameraType('');
+        setLocation(''); // Réinitialiser le lieu
         setDate('');
 
         if (onPhotoAdded) {
@@ -104,6 +107,18 @@ const PhotoForm = ({ onPhotoAdded, onClose }) => {
             value={cameraType}
             onChange={(e) => setCameraType(e.target.value)}
             style={styles.input}
+          />
+        </div>
+        <div style={{ marginBottom: '20px' }}>
+          <label htmlFor="location" style={styles.label}>Lieu :</label>
+          <input
+            type="text"
+            id="location"
+            placeholder="Lieu de la prise de vue"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)} // Modification du lieu
+            style={styles.input}
+            required
           />
         </div>
         <div style={{ marginBottom: '20px' }}>
